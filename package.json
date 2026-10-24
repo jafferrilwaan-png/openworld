@@ -1,7 +1,14 @@
 {
-  "name": "threejs-punk",
+  "name": "openworld",
   "private": true,
-  "version": "0.0.1",
+  "version": "1.0.0",
+  "description": "OpenWorld 3D - Cyberpunk driving, multi-vehicles, and open world WebGPU experience by Jaffer Rilwaan",
+  "author": "Jaffer Rilwaan (https://github.com/jafferrilwaan-png)",
+  "homepage": "https://github.com/jafferrilwaan-png/openworld#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jafferrilwaan-png/openworld.git"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

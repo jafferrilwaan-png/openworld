@@ -26,31 +26,28 @@ export function createAboutPanel({ state } = {}) {
     <div class="about-content">
       <div class="about-body">
         <div class="about-brand">
-          <p class="about-brand-title">THREEJS-PUNK</p>
-          <small class="about-brand-subtitle">BY ANDERSON MANCINI &amp; SUNAG</small>
+          <p class="about-brand-title">OPENWORLD 3D</p>
+          <small class="about-brand-subtitle">BY JAFFER RILWAAN</small>
         </div>
         <div class="about-copy">
           <div class="about-copy-col">
             <p class="about-lead">
-              Threejs-Punk drops you into a rain-soaked alley somewhere between a Blade
-              Runner backlot and a boot sequence — neon signs, wet asphalt, and a city
-              that never quite turns off its lights.
+              OpenWorld 3D drops you into a rain-soaked cyber metropolis — drive custom
+              vehicles, explore illuminated neon streets, and navigate a living futuristic city.
             </p>
             <p class="about-lead">
-              Every reflection, droplet and glow you see is rendered live with Three.js
-              WebGPU and TSL — no pre-baked tricks, just shaders doing the heavy lifting
-              in real time.
+              Every reflection, droplet, and glow you see is rendered live with Three.js
+              WebGPU and TSL — real-time shaders, responsive Rapier 3D vehicle physics, and cinematic bullet-time slow motion.
             </p>
           </div>
           <div class="about-copy-col">
             <p class="about-lead">
-              That flickering readout in the corner is set dressing: a fake vitals HUD
-              borrowed from the same retro-future aesthetic, just to make the night feel
-              a little more alive.
+              Featuring interactive POAP kiosks, Tanglish storefront banners, and an authentic
+              Free Fire style garage loading experience.
             </p>
             <p class="about-lead">
-              Originally built for the Three.js Conference — a small invitation to
-              wander, look up, and let the rain do the storytelling.
+              Hold the right mouse button anytime to trigger Bullet Time slow motion and experience
+              the city in high-intensity cinematic detail.
             </p>
           </div>
         </div>
@@ -58,39 +55,28 @@ export function createAboutPanel({ state } = {}) {
 
       <div class="about-footer">
         <div class="about-buttons">
-          <button type="button" class="refresh-button-panel about-link-anderson">
-            Anderson Mancini
-          </button>
-          <button type="button" class="refresh-button-panel about-link-sunag">
-            Sunag
-          </button>
           <button type="button" class="refresh-button-panel about-link-source">
-            Source code
+            GitHub Repository
           </button>
         </div>
         <p class="about-model-credits">
-          By Anderson Mancini &amp; Sunag
+          Developed by Jaffer Rilwaan
         </p>
         <p class="about-recommended about-recommended--desktop">
           <span class="about-recommended-title">Recommended setup</span>
-          GPU power and 16 GB RAM are what matter most. Mac: M2 or newer.
-          PC: discrete GPU, 16 GB RAM.
-          Chrome or Edge (latest) · WebGPU required · 1080p fullscreen (4K scales down automatically).
-          WASD + Shift sprint · click to look · Settings for Look · headphones recommended.
+          PC with discrete GPU, 16 GB RAM recommended.
+          Chrome or Edge (latest) · WebGPU required · 1080p fullscreen.
+          WASD to drive/walk · Right-click for Slow-Mo · Space for handbrake.
         </p>
         <p class="about-recommended about-recommended--mobile">
           <span class="about-recommended-title">Recommended setup</span>
-          iPhone 15 or newer · Android: 2023 flagship or newer (Snapdragon 8 Gen 2 / equivalent, 8 GB RAM).
-          Chrome (latest) · WebGPU required · landscape orientation.
-          On-screen joystick · Settings for Look · headphones recommended.
+          Mobile devices with WebGPU support · landscape orientation recommended.
         </p>
       </div>
     </div>
   `;
 
   const closeButton = root.querySelector(".close-button-panel");
-  const andersonButton = root.querySelector(".about-link-anderson");
-  const sunagButton = root.querySelector(".about-link-sunag");
   const sourceButton = root.querySelector(".about-link-source");
   const desktopRecommended = root.querySelector(".about-recommended--desktop");
   const mobileRecommended = root.querySelector(".about-recommended--mobile");
@@ -117,14 +103,6 @@ export function createAboutPanel({ state } = {}) {
 
   closeButton.addEventListener("click", close);
 
-  andersonButton.addEventListener("click", () => {
-    window.open("https://andersonmancini.dev", "_blank", "noopener,noreferrer");
-  });
-
-  sunagButton.addEventListener("click", () => {
-    window.open("https://x.com/sea3dformat", "_blank", "noopener,noreferrer");
-  });
-
   sourceButton.addEventListener("click", () => {
     window.open(SOURCE_CODE_URL, "_blank", "noopener,noreferrer");
   });
@@ -145,12 +123,12 @@ export function createAboutPanel({ state } = {}) {
     }
   });
 
-  function setForceHidden(hidden) {
-    if (hidden && !root.hidden) {
-      return;
+  function setForceHidden(force) {
+    if (force && !root.hidden) {
+      root.classList.toggle("about-overlay--force-hidden", force);
+    } else if (!force) {
+      root.classList.toggle("about-overlay--force-hidden", false);
     }
-
-    root.classList.toggle("about-overlay--force-hidden", hidden);
   }
 
   document.body.appendChild(root);
