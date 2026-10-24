@@ -45,6 +45,8 @@ import {
   DEFAULT_LOOK_PRESET,
   LOOK_PRESETS,
 } from "./post/look/cyberpunkLook.js";
+import { createCarController } from "./controls/createCarController.js";
+import { createDriveHud } from "./ui/walk/createDriveHud.js";
 
 const loader = createLoaderOverlay();
 
@@ -215,6 +217,18 @@ async function init(loaderOverlay) {
 
   cameraDirector.preparePreRevealPose();
 
+  const carController = createCarController({
+    camera,
+    car: world.car,
+    collider: world.carCollider,
+    ground: world.ground?.mesh,
+    colliders: world.colliders,
+    walkControls: cameraDirector.walkControls,
+    domElement: renderer.domElement,
+  });
+
+  const driveHud = createDriveHud({ carController });
+
   const introFlow = createIntroFlow({
     pipeline,
     renderer,
@@ -236,7 +250,11 @@ async function init(loaderOverlay) {
     renderer,
     getRainGlassIntro: introFlow.getRainGlassIntro,
     getIntroActive: introFlow.isIntroActive,
-    onFrame: (delta) => appShell.updateHud(delta),
+    onFrame: (delta) => {
+      appShell.updateHud(delta);
+      carController.update(delta);
+      driveHud.update();
+    },
   });
 
   await finalizeStartupLighting({

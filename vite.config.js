@@ -48,6 +48,32 @@ export default defineConfig({
   server: {
     host: true,
     open: true,
+    proxy: {
+      '^/(maps|audio|icons|textures|models/game)': {
+        target: 'https://threejspunk.vercel.app',
+        changeOrigin: true,
+        secure: false,
+        bypass(req) {
+          const cleanUrl = req.url.split('?')[0].replace(/^\//, '');
+          const localPath = resolve(rootDir, 'public', cleanUrl);
+          if (existsSync(localPath)) {
+            return req.url;
+          }
+        },
+      },
+      '^/.*\\.(mp3|wav|ogg|webp)$': {
+        target: 'https://threejspunk.vercel.app',
+        changeOrigin: true,
+        secure: false,
+        bypass(req) {
+          const cleanUrl = req.url.split('?')[0].replace(/^\//, '');
+          const localPath = resolve(rootDir, 'public', cleanUrl);
+          if (existsSync(localPath)) {
+            return req.url;
+          }
+        },
+      },
+    },
   },
   plugins: [
     basicSsl(),

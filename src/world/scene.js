@@ -16,16 +16,18 @@ export function addModel(scene, model) {
 
 export function createScene() {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x080610);
+  scene.background = new THREE.Color(0x7cb5f7);
 
   const SHADOW_EXTENT = 200;
   const SUN_DISTANCE = 150;
 
-  const sunLight = new THREE.DirectionalLight("#cfefff", 10);
-  sunLight.position.set(23, 31, 3);
+  // Bright realistic daytime sun
+  const sunLight = new THREE.DirectionalLight("#fff9f0", 16);
+  sunLight.position.set(38, 92, 28);
   sunLight.target.position.set(0, 0, 0);
   sunLight.castShadow = true;
-  sunLight.shadow.mapSize.set(4096, 4096);
+  // Optimized from 4096 to 2048 for high FPS
+  sunLight.shadow.mapSize.set(2048, 2048);
   sunLight.shadow.camera.near = 1;
   sunLight.shadow.camera.far = SUN_DISTANCE + SHADOW_EXTENT * 2;
   sunLight.shadow.camera.left = -SHADOW_EXTENT;
@@ -33,15 +35,19 @@ export function createScene() {
   sunLight.shadow.camera.top = SHADOW_EXTENT;
   sunLight.shadow.camera.bottom = -SHADOW_EXTENT;
   sunLight.shadow.camera.updateProjectionMatrix();
-  sunLight.shadow.bias = -0.001;
-  sunLight.shadow.normalBias = 0.009;
-  sunLight.shadow.intensity = 1.4;
+  sunLight.shadow.bias = -0.0008;
+  sunLight.shadow.normalBias = 0.006;
+  sunLight.shadow.intensity = 1.0;
   sunLight.shadow.autoUpdate = false;
   scene.add(sunLight);
   scene.add(sunLight.target);
 
-  const fillLight = new THREE.DirectionalLight("#ffd6c8", 1.5);
-  fillLight.position.set(-18, 22, -12);
+  // Natural daylight sky/ground bounce
+  const hemiLight = new THREE.HemisphereLight(0xbce3ff, 0x544e42, 3.2);
+  scene.add(hemiLight);
+
+  const fillLight = new THREE.DirectionalLight("#ffe8d4", 2.2);
+  fillLight.position.set(-25, 45, -20);
   fillLight.target.position.set(0, 0, 0);
   fillLight.castShadow = false;
   scene.add(fillLight);
@@ -66,5 +72,5 @@ export function createScene() {
 
   applySun();
 
-  return { scene, sunLight, fillLight, sunState, applySun };
+  return { scene, sunLight, fillLight, hemiLight, sunState, applySun };
 }

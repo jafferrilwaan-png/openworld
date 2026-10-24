@@ -4,6 +4,7 @@
 }
 
 .cyber-hud {
+  display: none !important;
   pointer-events: none;
   flex-shrink: 0;
 }

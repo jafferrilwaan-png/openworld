@@ -10,9 +10,9 @@ export const CITY_OFFSET_Y = -20;
 function prepareCity(city) {
   city.position.y = CITY_OFFSET_Y;
 
-  // Shadows on for everything for now; trim per-object later.
+  // Optimize shadows: static buildings receive shadows, but don't re-render into the shadow map
   city.traverse((child) => {
-    child.castShadow = true;
+    child.castShadow = false;
     child.receiveShadow = true;
   });
 

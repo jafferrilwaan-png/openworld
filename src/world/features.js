@@ -17,15 +17,15 @@
 export const FEATURES = {
   city: true,
   car: true,
-  rain: true,
-  smoke: true,
+  rain: false,
+  smoke: false,
   planes: true,
   sky: true,
   ground: true,
-  intro: true,
+  intro: false,
   chromeUi: true,
   walkUi: true,
-  audio: true,
+  audio: false,
   // Available in production too; setupInspector hides advanced panels outside DEV.
   inspector: true,
 };

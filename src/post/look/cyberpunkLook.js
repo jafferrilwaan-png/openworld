@@ -18,7 +18,7 @@ import {
 import { edgeChromaticAberration } from "../../tsl/edgeChromaticAberration.js";
 import { film } from "three/addons/tsl/display/FilmNode.js";
 
-export const DEFAULT_LOOK_PRESET = "neonNoir";
+export const DEFAULT_LOOK_PRESET = "neutral";
 
 export const LOOK_PRESET_LABELS = {
   Neutral: "neutral",
@@ -46,11 +46,11 @@ function srgbToLinearVec3([r, g, b]) {
 }
 
 export const DEFAULT_FOG = {
-  enabled: 0.35,
-  near: 0,
-  far: 50,
-  amount: 0.8,
-  colorSrgb: [0.34, 0.37, 0.47],
+  enabled: 0.05,
+  near: 80,
+  far: 400,
+  amount: 0.2,
+  colorSrgb: [0.72, 0.82, 0.96],
 };
 
 function fogUniforms(colorSrgb = DEFAULT_FOG.colorSrgb, overrides = {}) {
@@ -104,8 +104,8 @@ function presetUniforms({
 export const LOOK_PRESETS = {
   neutral: {
     label: "Neutral",
-    bloom: { strength: 3, radius: 0.5 },
-    bloomWide: { strength: 1.25, radius: 1 },
+    bloom: { strength: 0.25, radius: 0.3 },
+    bloomWide: { strength: 0.15, radius: 0.5 },
     lensflare: {
       strength: 0,
       threshold: 0.6,
@@ -113,7 +113,7 @@ export const LOOK_PRESETS = {
       ghostAttenuation: 25,
     },
     uniforms: presetUniforms({
-      ...fogUniforms([0.36, 0.38, 0.42]),
+      ...fogUniforms([0.72, 0.82, 0.96]),
       gradeTint: [1, 1, 1],
       gradeOffset: [0, 0, 0],
       saturationAmount: 1,
@@ -145,7 +145,7 @@ export const LOOK_PRESETS = {
       contrast: 1.1,
       greenSuppress: 0.72,
       gradeMix: 0.7,
-      chromaticStrength: 0.8,
+      chromaticStrength: 0,
       chromaticEdgeFalloff: 3.5,
       vignetteIntensity: 0.8,
       vignetteSmoothness: 0.64,
@@ -170,7 +170,7 @@ export const LOOK_PRESETS = {
       contrast: 1.12,
       greenSuppress: 0.68,
       gradeMix: 0.9,
-      chromaticStrength: 0.85,
+      chromaticStrength: 0,
       chromaticEdgeFalloff: 3.5,
       vignetteIntensity: 0.5,
       vignetteSmoothness: 0.55,
@@ -195,7 +195,7 @@ export const LOOK_PRESETS = {
       contrast: 1.06,
       greenSuppress: 0.8,
       gradeMix: 0.72,
-      chromaticStrength: 0.28,
+      chromaticStrength: 0,
       chromaticEdgeFalloff: 3,
       vignetteIntensity: 0.3,
       vignetteSmoothness: 0.68,
@@ -225,7 +225,7 @@ export const LOOK_PRESETS = {
       contrast: 1.91,
       greenSuppress: 0,
       gradeMix: 0.24,
-      chromaticStrength: 0.61,
+      chromaticStrength: 0,
       chromaticEdgeFalloff: 12,
       vignetteIntensity: 0.63,
       vignetteSmoothness: 0,

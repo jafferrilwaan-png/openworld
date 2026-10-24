@@ -111,7 +111,10 @@ export async function createWorld({
   }
 
   if (quadraCar) {
-    addModel(scene, quadraCar);
+    scene.add(quadraCar);
+    quadraCar.traverse((child) => {
+      child.matrixAutoUpdate = true;
+    });
   }
 
   if (quadraCollider) {
@@ -137,11 +140,11 @@ export async function createWorld({
       radius: 135,
       verticalOffset: -33.5,
     });
-    // Scene is night / neon — skip the bright day cloud preset.
+    // Bright realistic daytime cloud preset
     sky.updateFromSun({
-      night: 1,
-      skyTop: new THREE.Color(0x0a0818),
-      skyBottom: new THREE.Color(0x1c2438),
+      night: 0,
+      skyTop: new THREE.Color("#2a7cdb"),
+      skyBottom: new THREE.Color("#a2d8fa"),
     });
   }
 
