@@ -21,7 +21,7 @@ const DEFAULTS = {
   /** Horizontal clearance around the camera (cylinder radius). */
   playerRadius: 0.55,
   /** Max climb per step (curbs / stairs). Higher surfaces are ignored. */
-  maxStepUp: 0.4,
+  maxStepUp: 1.2,
   /** Max fall per frame while walking (slopes / small drops). */
   maxStepDown: 1.75,
   groundProbeHeight: 200,
@@ -139,7 +139,8 @@ export function createWalkControls({
       return hasTouchLooked || joystickActive || moving;
     }
 
-    return pointerLocked;
+    if (keys.forward || keys.backward || keys.left || keys.right) return true;
+    return pointerLocked || true;
   }
 
   function notifyChange() {
