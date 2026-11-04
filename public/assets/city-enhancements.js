@@ -37,12 +37,33 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
     }
   });
 
-  // Cap pixel ratio to 1.15 for low-end / mobile GPU stability
+  // HYPER UHD QUALITY & HIGH-FIDELITY GRAPHICS ENGINE
   try {
     if (renderer?.setPixelRatio) {
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.15));
+      const targetDpr = Math.min(window.devicePixelRatio || 1, 2.0);
+      renderer.setPixelRatio(targetDpr);
     }
-  } catch (_) {}
+    if (renderer?.shadowMap) {
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.autoUpdate = true;
+    }
+    scene.traverse(node => {
+      if (node.isMesh && node.material) {
+        const mats = Array.isArray(node.material) ? node.material : [node.material];
+        mats.forEach(mat => {
+          for (const slot of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap']) {
+            if (mat[slot] && mat[slot].isTexture) {
+              mat[slot].anisotropy = 16;
+              mat[slot].generateMipmaps = true;
+              mat[slot].needsUpdate = true;
+            }
+          }
+        });
+      }
+    });
+  } catch (err) {
+    console.warn('[city-enhancements] Hyper UHD init error:', err);
+  }
 
   // Audio Synthesizer
   let audioCtx = null;
@@ -125,7 +146,7 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
     ctx.shadowColor = '#ffea00';
     ctx.shadowBlur = 16;
     ctx.textAlign = 'center';
-    ctx.fillText(`⚡ ${tag} ⚡`, canvas.width / 2, 68);
+    ctx.fillText(`// ${tag} //`, canvas.width / 2, 68);
     ctx.restore();
 
     // Main Tanglish Title: "ANNACHI FAST FOOD"
@@ -297,44 +318,230 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
   window.addEventListener('game-physics-ready', () => flushQueuedPhysics());
 
   // ==========================================
-  // 4. SCENIC SKY CONTROLS (Keys 7, 8, 9, 0)
+  // 4. HYPER UHD REAL-TIME DAY & NIGHT SIMULATION
   // ==========================================
   const sky = world?.sky;
-  let skyMode = 'AUTO';
-  let dayTime = 0.25;
+  let sunLight = null;
+  let fillLight = null;
+  let hemiLight = null;
 
-  function applySkyPreset(night, topHex, bottomHex) {
-    if (!sky || !ColorClass) return;
-    try {
-      sky.updateFromSun({
-        night,
-        skyTop: new ColorClass(topHex),
-        skyBottom: new ColorClass(bottomHex)
-      });
-    } catch (_) {}
+  scene.traverse(node => {
+    if (node.isDirectionalLight) {
+      if (node.castShadow || !sunLight) sunLight = node;
+      else fillLight = node;
+    } else if (node.isHemisphereLight) {
+      hemiLight = node;
+    }
+  });
+
+  let skyMode = 'AUTO'; // 'AUTO', 'DAY', 'SUNSET', 'NIGHT'
+  let dayTime = 0.25;   // 0.25=Noon, 0.50=Sunset, 0.75=Midnight, 0.0/1.0=Dawn
+  let targetDayTime = 0.25;
+  const CYCLE_SPEED = 1 / 180; // Full 24-hr day/night cycle every 3 minutes (180s)
+
+  let curSunColor = null;
+  let curHemiSky = null;
+  let curHemiGround = null;
+  let curFillColor = null;
+  let curSkyTop = null;
+  let curSkyBottom = null;
+
+  function initSimColors() {
+    if (!ColorClass || curSunColor) return;
+    curSunColor = new ColorClass('#fff8ed');
+    curHemiSky = new ColorClass('#96ccff');
+    curHemiGround = new ColorClass('#544e42');
+    curFillColor = new ColorClass('#e8f2ff');
+    curSkyTop = new ColorClass('#1d65c4');
+    curSkyBottom = new ColorClass('#90caf9');
+  }
+
+  function updateSimulationLighting(dt) {
+    if (!ColorClass) return;
+    initSimColors();
+
+    if (skyMode === 'AUTO') {
+      dayTime = (dayTime + dt * CYCLE_SPEED) % 1.0;
+      targetDayTime = dayTime;
+    } else {
+      let diff = targetDayTime - dayTime;
+      if (diff > 0.5) diff -= 1.0;
+      if (diff < -0.5) diff += 1.0;
+      dayTime = (dayTime + diff * Math.min(dt * 3.5, 1.0) + 1.0) % 1.0;
+    }
+
+    let t = 0;
+    let kSunColor, kHemiSky, kHemiGround, kFillColor, kSkyTop, kSkyBottom;
+    let kSunInt, kHemiInt, kFillInt, kNight, kEvening, kEnvInt, kExposure;
+    let sunX, sunY, sunZ;
+
+    if (dayTime < 0.25) {
+      // Dawn (0.00) -> Noon (0.25)
+      t = dayTime / 0.25;
+      kSunColor = ['#ff8855', '#fff8ed'];
+      kSunInt = [8.5, 15.0];
+      kHemiSky = ['#3b4d75', '#96ccff'];
+      kHemiGround = ['#2e2229', '#544e42'];
+      kHemiInt = [2.0, 3.2];
+      kFillColor = ['#8ca4d4', '#e8f2ff'];
+      kFillInt = [1.5, 2.4];
+      kSkyTop = ['#16203a', '#1d65c4'];
+      kSkyBottom = ['#ff8855', '#90caf9'];
+      kNight = [0.4, 0.0];
+      kEvening = [0.6, 0.0];
+      kEnvInt = [0.11, 0.09];
+      kExposure = [1.02, 0.95];
+
+      sunX = -110 + t * 145;
+      sunY = 18 + t * 82;
+      sunZ = 20 + t * 10;
+    } else if (dayTime < 0.50) {
+      // Noon (0.25) -> Sunset (0.50)
+      t = (dayTime - 0.25) / 0.25;
+      kSunColor = ['#fff8ed', '#ff5522'];
+      kSunInt = [15.0, 10.5];
+      kHemiSky = ['#96ccff', '#5a1f68'];
+      kHemiGround = ['#544e42', '#3d1c1a'];
+      kHemiInt = [3.2, 2.3];
+      kFillColor = ['#e8f2ff', '#d14d85'];
+      kFillInt = [2.4, 1.8];
+      kSkyTop = ['#1d65c4', '#360c42'];
+      kSkyBottom = ['#90caf9', '#ff5522'];
+      kNight = [0.0, 0.2];
+      kEvening = [0.0, 1.0];
+      kEnvInt = [0.09, 0.13];
+      kExposure = [0.95, 1.05];
+
+      sunX = 35 + t * 75;
+      sunY = 100 - t * 82;
+      sunZ = 30 - t * 10;
+    } else if (dayTime < 0.75) {
+      // Sunset (0.50) -> Midnight (0.75)
+      t = (dayTime - 0.50) / 0.25;
+      kSunColor = ['#ff5522', '#3d5a80'];
+      kSunInt = [10.5, 2.8];
+      kHemiSky = ['#5a1f68', '#0a1428'];
+      kHemiGround = ['#3d1c1a', '#050812'];
+      kHemiInt = [2.3, 1.6];
+      kFillColor = ['#d14d85', '#00f0ff'];
+      kFillInt = [1.8, 1.2];
+      kSkyTop = ['#360c42', '#030510'];
+      kSkyBottom = ['#ff5522', '#0c1426'];
+      kNight = [0.2, 1.0];
+      kEvening = [1.0, 0.0];
+      kEnvInt = [0.13, 0.22];
+      kExposure = [1.05, 1.25];
+
+      sunX = 110 - t * 145;
+      sunY = 18 + t * 57;
+      sunZ = 20 - t * 40;
+    } else {
+      // Midnight (0.75) -> Dawn (1.00)
+      t = (dayTime - 0.75) / 0.25;
+      kSunColor = ['#3d5a80', '#ff8855'];
+      kSunInt = [2.8, 8.5];
+      kHemiSky = ['#0a1428', '#3b4d75'];
+      kHemiGround = ['#050812', '#2e2229'];
+      kHemiInt = [1.6, 2.0];
+      kFillColor = ['#00f0ff', '#8ca4d4'];
+      kFillInt = [1.2, 1.5];
+      kSkyTop = ['#030510', '#16203a'];
+      kSkyBottom = ['#0c1426', '#ff8855'];
+      kNight = [1.0, 0.4];
+      kEvening = [0.0, 0.6];
+      kEnvInt = [0.22, 0.11];
+      kExposure = [1.25, 1.02];
+
+      sunX = -35 - t * 75;
+      sunY = 75 - t * 57;
+      sunZ = -20 + t * 40;
+    }
+
+    const ease = t * t * (3 - 2 * t);
+    const lerpNum = (arr) => arr[0] + (arr[1] - arr[0]) * ease;
+    const lerpCol = (out, arr) => {
+      const c1 = new ColorClass(arr[0]);
+      const c2 = new ColorClass(arr[1]);
+      out.copy(c1).lerp(c2, ease);
+    };
+
+    lerpCol(curSunColor, kSunColor);
+    lerpCol(curHemiSky, kHemiSky);
+    lerpCol(curHemiGround, kHemiGround);
+    lerpCol(curFillColor, kFillColor);
+    lerpCol(curSkyTop, kSkyTop);
+    lerpCol(curSkyBottom, kSkyBottom);
+
+    const curSunInt = lerpNum(kSunInt);
+    const curHemiInt = lerpNum(kHemiInt);
+    const curFillInt = lerpNum(kFillInt);
+    const curNight = lerpNum(kNight);
+    const curEvening = lerpNum(kEvening);
+    const curEnvInt = lerpNum(kEnvInt);
+    const curExposure = lerpNum(kExposure);
+
+    if (sunLight) {
+      sunLight.position.set(sunX, sunY, sunZ);
+      sunLight.color.copy(curSunColor);
+      sunLight.intensity = curSunInt;
+      if (sunLight.shadow) {
+        sunLight.shadow.intensity = (dayTime > 0.65 && dayTime < 0.85) ? 0.35 : 1.0;
+      }
+      sunLight.target.position.set(0, 0, 0);
+      sunLight.target.updateMatrixWorld();
+    }
+
+    if (hemiLight) {
+      hemiLight.color.copy(curHemiSky);
+      hemiLight.groundColor.copy(curHemiGround);
+      hemiLight.intensity = curHemiInt;
+    }
+
+    if (fillLight) {
+      fillLight.color.copy(curFillColor);
+      fillLight.intensity = curFillInt;
+    }
+
+    if (sky?.updateFromSun) {
+      try {
+        sky.updateFromSun({
+          evening: curEvening,
+          night: curNight,
+          skyTop: curSkyTop,
+          skyBottom: curSkyBottom
+        });
+      } catch (_) {}
+    }
+
+    if (scene) {
+      scene.environmentIntensity = curEnvInt;
+    }
+    if (renderer) {
+      renderer.toneMappingExposure = curExposure;
+    }
   }
 
   window.addEventListener('keydown', e => {
     if (e.repeat) return;
     if (e.code === 'Digit7' || e.code === 'Numpad7') {
       skyMode = 'DAY';
-      applySkyPreset(0, '#2a7cdb', '#a2d8fa');
+      targetDayTime = 0.25;
       playSound(520, 780, 0.4);
     } else if (e.code === 'Digit8' || e.code === 'Numpad8') {
       skyMode = 'SUNSET';
-      applySkyPreset(0.55, '#3b1248', '#ff5522');
+      targetDayTime = 0.50;
       playSound(440, 660, 0.4);
     } else if (e.code === 'Digit9' || e.code === 'Numpad9') {
       skyMode = 'NIGHT';
-      applySkyPreset(1.0, '#060814', '#111828');
+      targetDayTime = 0.75;
       playSound(330, 440, 0.4);
     } else if (e.code === 'Digit0' || e.code === 'Numpad0') {
-      skyMode = 'AUTO';
+      skyMode = skyMode === 'AUTO' ? 'DAY' : 'AUTO';
+      if (skyMode === 'DAY') targetDayTime = 0.25;
       playSound(440, 880, 0.5);
     }
   });
 
-  // ==========================================
   // 5. LS-M1 US MARINE CORPS MEGA TANK
   // ==========================================
   let tankMesh = null;
@@ -588,7 +795,7 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
       ctx.font = '900 24px Orbitron, sans-serif';
       ctx.fillStyle = claimed ? '#88ffbb' : '#00f0ff';
       ctx.textAlign = 'center';
-      ctx.fillText(claimed ? '★ METRO SECTOR ACCESSED ★' : '★ METRO SECTOR ACCESS ★', cx, 115);
+      ctx.fillText(claimed ? 'METRO SECTOR ACCESSED' : 'METRO SECTOR ACCESS', cx, 115);
 
       // Prominent bold name: JAFFER
       ctx.font = '900 78px Orbitron, sans-serif';
@@ -983,34 +1190,14 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
   });
 
   // ==========================================
-  // 7.5 RIGHT-CLICK BULLET TIME / SLOW MOTION
+  // 7.5 RIGHT-CLICK BULLET TIME / SLOW MOTION (MINIMAL - ZERO UI POPUPS)
   // ==========================================
   let isSlowMo = false;
-  let slowMoIndicator = null;
-
-  function ensureSlowMoIndicator() {
-    if (!slowMoIndicator) {
-      slowMoIndicator = document.createElement('div');
-      slowMoIndicator.id = 'slow-mo-indicator';
-      slowMoIndicator.className = 'slow-mo-indicator';
-      slowMoIndicator.innerHTML = '<span>⚡ BULLET TIME</span> • 0.25X SLOW-MO';
-      document.body.appendChild(slowMoIndicator);
-    }
-    return slowMoIndicator;
-  }
 
   function setSlowMotion(active) {
     if (isSlowMo === active) return;
     isSlowMo = active;
     window.__timeScale = active ? 0.22 : 1.0;
-    const ind = ensureSlowMoIndicator();
-    if (active) {
-      ind.classList.add('active');
-      playSound(180, 45, 0.7, 'sine', 0.22);
-    } else {
-      ind.classList.remove('active');
-      playSound(60, 260, 0.35, 'triangle', 0.15);
-    }
   }
 
   window.addEventListener('mousedown', e => {
@@ -1032,7 +1219,6 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
     return false;
   });
 
-  // ==========================================
   // 8. REAL-WORLD OBB SEPARATING AXIS THEOREM (SAT) SOLVER
   // ==========================================
   const testAxes = [
@@ -1093,9 +1279,6 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
   // ==========================================
   function _disabledCheckpointToast() {
     // Completely disabled - no intrusive or tacky game popups
-  };
-      }, 500);
-    }, 4200);
   }
 
   let lastTime = performance.now();
@@ -1110,31 +1293,8 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
 
     flushQueuedPhysics();
 
-    // 1. Sky Cycle (throttled every 60 frames for zero lag)
-    if (skyMode === 'AUTO' && sky && frameCount % 60 === 0) {
-      dayTime = (dayTime + 0.00018) % 1.0;
-      let nightFactor = 0;
-      let topHex = '#2a7cdb';
-      let bottomHex = '#a2d8fa';
-
-      if (dayTime < 0.25) {
-        nightFactor = (1 - dayTime / 0.25) * 0.4;
-        topHex = '#2a7cdb'; bottomHex = '#a2d8fa';
-      } else if (dayTime < 0.5) {
-        const t = (dayTime - 0.25) / 0.25;
-        nightFactor = t * 0.6;
-        topHex = '#3b1248'; bottomHex = '#ff5522';
-      } else if (dayTime < 0.75) {
-        const t = (dayTime - 0.5) / 0.25;
-        nightFactor = 0.6 + t * 0.4;
-        topHex = '#060814'; bottomHex = '#111828';
-      } else {
-        const t = (dayTime - 0.75) / 0.25;
-        nightFactor = 1.0 - t * 0.6;
-        topHex = '#485588'; bottomHex = '#ff9966';
-      }
-      applySkyPreset(nightFactor, topHex, bottomHex);
-    }
+    // 1. Hyper UHD Real-Time Day & Night Simulation (continuous frame update)
+    updateSimulationLighting(dt);
 
     // 2. Animate Road Traffic
     roadCars.forEach(rc => {
