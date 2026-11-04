@@ -25,11 +25,11 @@ Explore a rain-drenched cyberpunk metropolis, command multiple high-performance 
 - Hold the **Right Mouse Button** anytime to enter cinematic time dilation.
 - Physics and camera animations smoothly transition into high-intensity slow motion.
 
-### 🎮 Free Fire Style Garage Loading Experience
+### 🎮 Cyberpunk Showroom Style Garage Loading Experience
 - Custom tactical loading screen featuring high-energy character artwork, real-time asset loading indicators, and gameplay tips.
 
-### 🏪 Interactive POAP Kiosks & Tanglish Billboards
-- Holographic and metallic POAP kiosks stationed across the city with interactive proximity name recognition.
+### 🏪 Interactive Checkpoint Kiosks & Tanglish Billboards
+- Holographic and metallic Checkpoint kiosks stationed across the city with interactive proximity name recognition.
 - Stylized Tanglish neon storefront banners seamlessly integrated into the futuristic architecture.
 
 ### 🌧️ WebGPU Real-Time Visuals

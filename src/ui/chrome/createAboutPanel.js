@@ -42,8 +42,8 @@ export function createAboutPanel({ state } = {}) {
           </div>
           <div class="about-copy-col">
             <p class="about-lead">
-              Featuring interactive POAP kiosks, Tanglish storefront banners, and an authentic
-              Free Fire style garage loading experience.
+              Featuring high-fidelity vehicle models, dynamic neon storefronts, and a seamless
+              cinematic underground vehicle showroom.
             </p>
             <p class="about-lead">
               Hold the right mouse button anytime to trigger Bullet Time slow motion and experience

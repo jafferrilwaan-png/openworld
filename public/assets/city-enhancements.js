@@ -588,7 +588,7 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
       ctx.font = '900 24px Orbitron, sans-serif';
       ctx.fillStyle = claimed ? '#88ffbb' : '#00f0ff';
       ctx.textAlign = 'center';
-      ctx.fillText(claimed ? '★ VERIFIED ON-CHAIN ★' : '★ OFFICIAL POAP TOKEN ★', cx, 115);
+      ctx.fillText(claimed ? '★ METRO SECTOR ACCESSED ★' : '★ METRO SECTOR ACCESS ★', cx, 115);
 
       // Prominent bold name: JAFFER
       ctx.font = '900 78px Orbitron, sans-serif';
@@ -646,7 +646,7 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
 
       ctx.font = '700 22px Orbitron, sans-serif';
       ctx.fillStyle = '#ffffff';
-      ctx.fillText(`POAP TERMINAL #${id}`, 256, 130);
+      ctx.fillText(`METRO TERMINAL #${id}`, 256, 130);
 
       ctx.fillStyle = claimed ? '#00ff88' : '#ffe600';
       ctx.font = '900 64px Orbitron, sans-serif';
@@ -1091,32 +1091,9 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
   // ==========================================
   // 9. UNIFIED MASTER TICK (60 FPS OPTIMIZED)
   // ==========================================
-  function showFreeFireClaimToast({ index, total, claimedCount, locationName }) {
-    let container = document.getElementById('ff-poap-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'ff-poap-container';
-      container.className = 'ff-poap-container';
-      document.body.appendChild(container);
-    }
-
-    const toast = document.createElement('div');
-    toast.className = 'ff-poap-toast';
-    toast.innerHTML = `
-      <div class="ff-poap-toast__icon-wrap">🏅</div>
-      <div class="ff-poap-toast__body">
-        <div class="ff-poap-toast__tag">FREE FIRE x JAFFER CITY</div>
-        <div class="ff-poap-toast__title">JAFFER POAP <span>CLAIMED!</span></div>
-        <div class="ff-poap-toast__desc">Proof of Attendance #${index} Collected (${claimedCount} / ${total}) • ${locationName}</div>
-      </div>
-    `;
-
-    container.appendChild(toast);
-
-    setTimeout(() => {
-      toast.classList.add('fade-out');
-      setTimeout(() => {
-        if (toast.parentNode) toast.parentNode.removeChild(toast);
+  function _disabledCheckpointToast() {
+    // Completely disabled - no intrusive or tacky game popups
+  };
       }, 500);
     }, 4200);
   }
@@ -1228,7 +1205,7 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
           }
 
           const claimedCount = poapMachines.filter(p => p.collected).length;
-          showFreeFireClaimToast({
+          _disabledCheckpointToast({
             index: m.index + 1,
             total: poapMachines.length,
             claimedCount: claimedCount,
