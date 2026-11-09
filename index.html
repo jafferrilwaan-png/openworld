@@ -57,7 +57,11 @@
       #cyber-controls-badge, #shuttle-board-prompt, .ccb-inner, .phone-toast, .phone-chip,
       .walk-prompt, .walk-prompt-frame, .walk-prompt-inner, .walk-prompt-pulse,
       .walk-controls, .drive-tutorial, .walk-prompt--visible, .walk-controls__backdrop, .walk-controls__dialog,
-      .enter-car, .enter-car *, button.enter-car {
+      .enter-car, .enter-car *, button.enter-car,
+      #ff-poap-container, .ff-poap-container, .ff-poap-toast, [class*="poap"], [id*="poap"],
+      #slow-mo-indicator, .slow-mo-indicator, [class*="slow-mo"], [id*="slow-mo"],
+      .ff-tip-box, .ff-loading-row, .ff-bar-wrap, [class*="racing-tip"], [class*="tip-box"],
+      .garage-transit__tips, .garage-transit__status, .garage-transit__bar, .garage-transit__progress {
         display: none !important;
         opacity: 0 !important;
         visibility: hidden !important;
@@ -69,11 +73,24 @@
       }
     </style>
     <script>
-      const killBadges = () => {
-        document.querySelectorAll('#cyber-controls-badge, #shuttle-board-prompt, .ccb-inner, .phone-toast, .phone-chip, .walk-prompt, .walk-prompt-frame, .walk-prompt-inner, .walk-controls, .drive-tutorial, .enter-car').forEach(el => el.remove());
+      const killClutter = () => {
+        document.querySelectorAll(
+          '#cyber-controls-badge, #shuttle-board-prompt, .ccb-inner, .phone-toast, .phone-chip, ' +
+          '.walk-prompt, .walk-prompt-frame, .walk-prompt-inner, .walk-controls, .drive-tutorial, .enter-car, ' +
+          '#ff-poap-container, .ff-poap-container, .ff-poap-toast, #slow-mo-indicator, .slow-mo-indicator, ' +
+          '.ff-tip-box, .ff-loading-row, .ff-bar-wrap, .garage-transit__tips, .garage-transit__status, .garage-transit__bar, [class*="poap"], [class*="slow-mo"]'
+        ).forEach(el => el.remove());
       };
-      killBadges();
-      window.addEventListener('DOMContentLoaded', killBadges);
+      killClutter();
+      window.addEventListener('DOMContentLoaded', killClutter);
+      const _clutterObs = new MutationObserver(() => killClutter());
+      if (document.body) {
+        _clutterObs.observe(document.body, { childList: true, subtree: true });
+      } else {
+        window.addEventListener('DOMContentLoaded', () => {
+          if (document.body) _clutterObs.observe(document.body, { childList: true, subtree: true });
+        });
+      }
 
       // Auto-lock pointer on canvas click without showing any prompt
       window.addEventListener('click', (e) => {
