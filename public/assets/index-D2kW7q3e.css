@@ -103,21 +103,21 @@
 .garage-transit__title,
 .garage-transit__header,
 .garage-transit__footer,
-.ff-brand-tag,
-.ff-mode-title,
-.ff-tip-box,
-.ff-loading-row,
-.ff-bar-wrap,
-.ff-poap-container,
-.ff-poap-toast {
+
+
+
+
+
+
+ {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
 }
 
-.slow-mo-indicator,
-#slow-mo-indicator {
+
+ {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;

@@ -598,18 +598,17 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
   // ==========================================
   // 6. LOAD VEHICLE GLB MODELS
   // ==========================================
-  let audiG = null, camaroG = null, ferrariG = null, conceptG = null, truckGltf = null, poapGltf = null;
+  let audiG = null, camaroG = null, ferrariG = null, conceptG = null, truckGltf = null;
   const roadCars = [];
-  const poapMachines = [];
+  
 
   try {
-    [audiG, camaroG, ferrariG, conceptG, truckGltf, poapGltf] = await Promise.all([
+    [audiG, camaroG, ferrariG, conceptG, truckGltf] = await Promise.all([
       loader.loadAsync('/models/audi.glb').catch(() => null),
       loader.loadAsync('/models/camaro.glb').catch(() => null),
       loader.loadAsync('/models/ferrari.glb').catch(() => null),
       loader.loadAsync('/models/car_concept.glb').catch(() => null),
-      loader.loadAsync('/models/truck.glb').catch(() => null),
-      loader.loadAsync('/models/poapmachine.glb').catch(() => null)
+      loader.loadAsync('/models/truck.glb').catch(() => null)
     ]);
 
     window._audiTemplateGltf = audiG?.scene || null;
@@ -746,254 +745,7 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
     }
 
     // ==========================================
-    // 6.5 OFFICIAL POAP MACHINES ("JAFFER" EDITION)
     // ==========================================
-    function createJafferPoapTexture(claimed = false) {
-      if (!CanvasTextureClass) return null;
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-      const cx = 256, cy = 256, r = 236;
-
-      ctx.clearRect(0, 0, 512, 512);
-
-      // Radial background
-      const rad = ctx.createRadialGradient(cx, cy, 40, cx, cy, r);
-      if (!claimed) {
-        rad.addColorStop(0, '#0c2444');
-        rad.addColorStop(0.7, '#041022');
-        rad.addColorStop(1, '#000612');
-      } else {
-        rad.addColorStop(0, '#0a3d24');
-        rad.addColorStop(0.7, '#022010');
-        rad.addColorStop(1, '#000c06');
-      }
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = rad;
-      ctx.fill();
-
-      // Outer gold glowing rim
-      ctx.lineWidth = 14;
-      ctx.strokeStyle = claimed ? '#00ff88' : '#ffe600';
-      ctx.shadowColor = claimed ? '#00ff88' : '#ffe600';
-      ctx.shadowBlur = 24;
-      ctx.stroke();
-
-      // Inner cyan rim
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = claimed ? '#88ffbb' : '#00f0ff';
-      ctx.shadowColor = claimed ? '#88ffbb' : '#00f0ff';
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r - 20, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // Badge top label
-      ctx.font = '900 24px Orbitron, sans-serif';
-      ctx.fillStyle = claimed ? '#88ffbb' : '#00f0ff';
-      ctx.textAlign = 'center';
-      ctx.fillText(claimed ? 'METRO SECTOR ACCESSED' : 'METRO SECTOR ACCESS', cx, 115);
-
-      // Prominent bold name: JAFFER
-      ctx.font = '900 78px Orbitron, sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowColor = claimed ? '#00ff88' : '#ffe600';
-      ctx.shadowBlur = 28;
-      ctx.fillText('JAFFER', cx, 235);
-      ctx.shadowBlur = 0;
-
-      // Divider line
-      ctx.fillStyle = claimed ? '#00ff88' : '#ffe600';
-      ctx.fillRect(cx - 120, 258, 240, 6);
-
-      // Subtitle
-      ctx.font = '800 28px Orbitron, sans-serif';
-      ctx.fillStyle = claimed ? '#00ff88' : '#ffe600';
-      ctx.fillText(claimed ? 'CLAIMED' : 'PROOF OF ATTENDANCE', cx, 315);
-
-      // Prompt
-      ctx.font = '700 20px Orbitron, sans-serif';
-      ctx.fillStyle = '#c4d7ec';
-      ctx.fillText(claimed ? 'COLLECTED BY PLAYER' : 'APPROACH TO CLAIM', cx, 385);
-
-      const tex = new CanvasTextureClass(canvas);
-      tex.needsUpdate = true;
-      return tex;
-    }
-
-    function createKioskScreenTexture(claimed = false, id = 1) {
-      if (!CanvasTextureClass) return null;
-      const canvas = document.createElement('canvas');
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext('2d');
-
-      ctx.fillStyle = '#060a12';
-      ctx.fillRect(0, 0, 512, 512);
-
-      // Grid
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.15)';
-      ctx.lineWidth = 1.5;
-      for (let i = 0; i <= 512; i += 32) {
-        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
-      }
-
-      ctx.lineWidth = 10;
-      ctx.strokeStyle = claimed ? '#00ff88' : '#00f0ff';
-      ctx.strokeRect(10, 10, 492, 492);
-
-      ctx.textAlign = 'center';
-      ctx.font = '900 32px Orbitron, sans-serif';
-      ctx.fillStyle = claimed ? '#00ff88' : '#00f0ff';
-      ctx.fillText('JAFFER NETWORK', 256, 75);
-
-      ctx.font = '700 22px Orbitron, sans-serif';
-      ctx.fillStyle = '#ffffff';
-      ctx.fillText(`METRO TERMINAL #${id}`, 256, 130);
-
-      ctx.fillStyle = claimed ? '#00ff88' : '#ffe600';
-      ctx.font = '900 64px Orbitron, sans-serif';
-      ctx.fillText(claimed ? 'CLAIMED' : 'READY', 256, 260);
-
-      ctx.font = '600 20px Orbitron, sans-serif';
-      ctx.fillStyle = '#c4d7ec';
-      ctx.fillText(claimed ? 'VERIFIED ATTENDEE' : 'APPROACH KIOSK', 256, 340);
-      ctx.fillText(claimed ? 'TOKEN STORED IN WALLET' : 'TO COLLECT BADGE', 256, 380);
-
-      const tex = new CanvasTextureClass(canvas);
-      tex.needsUpdate = true;
-      return tex;
-    }
-
-    const poapLocations = [
-      { x: -84.0, z: -445.0, yaw: 0, name: 'Skyport Plaza' },
-      { x: -18.0, z: 8.0, yaw: 0.8, name: 'Annachi Fast Food Plaza' },
-      { x: -94.0, z: -535.0, yaw: Math.PI * 0.5, name: 'Central Boulevard Walk' },
-      { x: -96.0, z: -485.0, yaw: Math.PI * 0.5, name: 'Cyber Garage Plaza' },
-      { x: -68.0, z: -510.0, yaw: -Math.PI * 0.35, name: 'East Avenue Corner' },
-      { x: -78.0, z: -605.0, yaw: 0, name: 'Metro Overpass Plaza' }
-    ];
-
-    poapLocations.forEach((pos, idx) => {
-      const kioskGroup = new (GroupClass || MeshClass)();
-      kioskGroup.name = `poap_machine_${idx + 1}`;
-      kioskGroup.position.set(pos.x, groundY, pos.z);
-      kioskGroup.rotation.y = pos.yaw;
-
-      let screenMesh = null;
-
-      if (poapGltf?.scene) {
-        const kioskModel = poapGltf.scene.clone(true);
-        kioskModel.scale.setScalar(1.0);
-        kioskModel.position.set(0, 0, 0);
-
-        kioskModel.traverse(node => {
-          if (node.isMesh) {
-            node.castShadow = false;
-            node.receiveShadow = true;
-            if (node.material) {
-              if (node.material.name === 'EmissiveWhite' || node.material.name === 'EmissiveRed') {
-                node.material = node.material.clone();
-                if (ColorClass) node.material.emissive = new ColorClass(0x00f0ff);
-                node.material.emissiveIntensity = 2.2;
-              }
-            }
-          }
-        });
-
-        kioskGroup.add(kioskModel);
-      } else if (BoxGeo && MeshClass && MeshMat) {
-        const chassis = new MeshClass(new BoxGeo(1.4, 2.0, 1.4), new MeshMat({ color: 0x111622, roughness: 0.4, metalness: 0.8 }));
-        chassis.position.y = 1.0;
-        kioskGroup.add(chassis);
-      }
-
-      // High-tech front console screen
-      if (BoxGeo && MeshClass && MeshMat && CanvasTextureClass) {
-        const screenMat = new MeshMat({
-          map: createKioskScreenTexture(false, idx + 1),
-          emissive: ColorClass ? new ColorClass(0xffffff) : undefined,
-          emissiveMap: createKioskScreenTexture(false, idx + 1),
-          emissiveIntensity: 1.2
-        });
-        screenMesh = new MeshClass(new BoxGeo(0.85, 0.55, 0.05), screenMat);
-        screenMesh.position.set(0, 1.35, 0.65);
-        kioskGroup.add(screenMesh);
-      }
-
-      // Floating Holographic "JAFFER" Badge
-      let badgeGroup = null;
-      if (BoxGeo && MeshClass && MeshMat && CanvasTextureClass) {
-        badgeGroup = new (GroupClass || MeshClass)();
-        badgeGroup.position.set(0, 2.45, 0);
-
-        const badgeTex = createJafferPoapTexture(false);
-        const badgeMat = new MeshMat({
-          map: badgeTex,
-          emissive: ColorClass ? new ColorClass(0xffffff) : undefined,
-          emissiveMap: badgeTex,
-          emissiveIntensity: 1.5,
-          transparent: true,
-          roughness: 0.2,
-          metalness: 0.6
-        });
-
-        const medallion = new MeshClass(new BoxGeo(1.3, 1.3, 0.06), badgeMat);
-        badgeGroup.add(medallion);
-
-        const haloMat = new MeshMat({
-          color: 0x00f0ff,
-          emissive: ColorClass ? new ColorClass(0x00f0ff) : undefined,
-          emissiveIntensity: 2.5
-        });
-        const topPillar = new MeshClass(new BoxGeo(1.4, 0.06, 0.08), haloMat);
-        topPillar.position.y = 0.68;
-        badgeGroup.add(topPillar);
-
-        const btmPillar = new MeshClass(new BoxGeo(1.4, 0.06, 0.08), haloMat);
-        btmPillar.position.y = -0.68;
-        badgeGroup.add(btmPillar);
-
-        kioskGroup.add(badgeGroup);
-      }
-
-      scene.add(kioskGroup);
-
-      const obs = registerSolidPhysicsBox(
-        { x: pos.x, y: groundY, z: pos.z },
-        { x: 1.8, y: 2.4, z: 2.0 },
-        pos.yaw,
-        false,
-        'poap_machine'
-      );
-      obs.mesh = kioskGroup;
-
-      poapMachines.push({
-        id: `poap_${idx + 1}`,
-        index: idx,
-        x: pos.x,
-        z: pos.z,
-        yaw: pos.yaw,
-        locationName: pos.name,
-        kioskMesh: kioskGroup,
-        badgeMesh: badgeGroup,
-        screenMesh: screenMesh,
-        obstacle: obs,
-        collected: false,
-        isDisappearing: false,
-        disappearProgress: 0,
-        bobOffset: idx * 1.05
-      });
-    });
-  } catch (err) {
-    console.warn('[city-enhancements] Vehicle load error:', err);
-  }
-
-  // ==========================================
   // 7. MULTI-VEHICLE DRIVABLE SYSTEM
   // ==========================================
   window.switchDrivableVehicle = function(type, optionalPose = null) {
@@ -1277,9 +1029,7 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
   // ==========================================
   // 9. UNIFIED MASTER TICK (60 FPS OPTIMIZED)
   // ==========================================
-  function _disabledCheckpointToast() {
-    // Completely disabled - no intrusive or tacky game popups
-  }
+  
 
   let lastTime = performance.now();
   let frameCount = 0;
@@ -1330,70 +1080,6 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
     const dm = window.__activeDriveMode || world?.carRig;
     const playerCar = dm?.root || world?.car;
     const chassis = window.__playerChassis;
-
-    // 2.5 POAP KIOSK DISAPPEARING & CLAIM PROXIMITY CHECK
-    let playerPos = null;
-    if (playerCar && dm && dm.isActive && dm.isActive()) {
-      playerPos = { x: playerCar.position.x, z: playerCar.position.z };
-    } else if (camera) {
-      playerPos = { x: camera.position.x, z: camera.position.z };
-    }
-
-    for (const m of poapMachines) {
-      // Proximity check: disappears when player approaches!
-      if (playerPos && !m.collected && !m.isDisappearing) {
-        const dx = playerPos.x - m.x;
-        const dz = playerPos.z - m.z;
-        if (dx * dx + dz * dz <= 20.25) { // Within 4.5m
-          m.collected = true;
-          m.isDisappearing = true;
-          m.disappearProgress = 0;
-
-          // Sound chime
-          playSound(523.25, 783.99, 0.18, 'triangle', 0.25);
-          setTimeout(() => playSound(783.99, 1046.50, 0.22, 'sine', 0.28), 120);
-          setTimeout(() => playSound(1046.50, 1567.98, 0.35, 'triangle', 0.32), 240);
-
-          // Update kiosk screen texture
-          if (m.screenMesh && CanvasTextureClass) {
-            try {
-              const claimedTex = createKioskScreenTexture(true, m.index + 1);
-              m.screenMesh.material.map = claimedTex;
-              m.screenMesh.material.emissiveMap = claimedTex;
-              m.screenMesh.material.needsUpdate = true;
-            } catch (_) {}
-          }
-
-          const claimedCount = poapMachines.filter(p => p.collected).length;
-          _disabledCheckpointToast({
-            index: m.index + 1,
-            total: poapMachines.length,
-            claimedCount: claimedCount,
-            locationName: m.locationName
-          });
-        }
-      }
-
-      // Animate badge disappearance or floating bobbing
-      if (m.isDisappearing) {
-        m.disappearProgress += 0.045;
-        if (m.badgeMesh) {
-          m.badgeMesh.rotation.y += 0.28;
-          const s = Math.max(0, 1.0 - m.disappearProgress);
-          m.badgeMesh.scale.set(s, s, s);
-          m.badgeMesh.position.y += 0.035; // floats up as it vanishes!
-          if (m.disappearProgress >= 1.0) {
-            m.badgeMesh.visible = false;
-            m.isDisappearing = false;
-          }
-        }
-      } else if (!m.collected) {
-        if (m.badgeMesh) {
-          m.badgeMesh.rotation.y += 0.025;
-          m.badgeMesh.position.y = 2.45 + Math.sin(now * 0.003 + m.bobOffset) * 0.12;
-        }
-      }
-    }
 
     if (playerCar && dm && dm.isActive && dm.isActive()) {
       const pPos = { x: playerCar.position.x, z: playerCar.position.z };
