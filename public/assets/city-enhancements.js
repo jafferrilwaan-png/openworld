@@ -745,7 +745,11 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
     }
 
     // ==========================================
-    // ==========================================
+    } catch (err) {
+    console.warn("[city-enhancements] Vehicle load error:", err);
+  }
+
+  // ==========================================
   // 7. MULTI-VEHICLE DRIVABLE SYSTEM
   // ==========================================
   window.switchDrivableVehicle = function(type, optionalPose = null) {
@@ -915,7 +919,190 @@ export async function initCityEnhancements({ scene, renderer, camera, loader, wo
       let closestObs = null;
       let minDist = 12.0;
 
-      requestAnimationFrame(masterLoop);
+      for (const obs of physicalObstacles) {
+        if (!obs.mesh) continue;
+        const d = Math.hypot(px - obs.mesh.position.x, pz - obs.mesh.position.z);
+        if (d < minDist) {
+          minDist = d;
+          closestObs = obs;
+        }
+      }
+
+      if (closestObs) {
+        const targetType = closestObs.type || 'quadra';
+        const targetPose = {
+          x: closestObs.mesh.position.x,
+          z: closestObs.mesh.position.z,
+          yaw: closestObs.mesh.rotation.y || 0
+        };
+
+        window.switchDrivableVehicle(targetType, targetPose);
+        closestObs.mesh.position.z += 25.0;
+        playSound(440, 880, 0.4);
+      } else {
+        window.switchDrivableVehicle('quadra', { x: px - 2.5, z: pz - 2.5, yaw: camera.rotation.y || 0 });
+      }
+    }
+  });
+
+  // ==========================================
+  // 7.5 RIGHT-CLICK BULLET TIME / SLOW MOTION (MINIMAL - ZERO UI POPUPS)
+  // ==========================================
+  let isSlowMo = false;
+
+  function setSlowMotion(active) {
+    if (isSlowMo === active) return;
+    isSlowMo = active;
+    window.__timeScale = active ? 0.22 : 1.0;
+  }
+
+  window.addEventListener('mousedown', e => {
+    if (e.button === 2) {
+      e.preventDefault();
+      setSlowMotion(true);
+    }
+  });
+
+  window.addEventListener('mouseup', e => {
+    if (e.button === 2) {
+      e.preventDefault();
+      setSlowMotion(false);
+    }
+  });
+
+  window.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    return false;
+  });
+
+  // 8. REAL-WORLD OBB SEPARATING AXIS THEOREM (SAT) SOLVER
+  // ==========================================
+  const testAxes = [
+    { x: 1, z: 0 },
+    { x: 0, z: 1 },
+    { x: 1, z: 0 },
+    { x: 0, z: 1 }
+  ];
+
+  function resolveOBBCollision(playerPos, playerYaw, playerHW, playerHL, obsPos, obsYaw, obsHW, obsHL) {
+    const dx = playerPos.x - obsPos.x;
+    const dz = playerPos.z - obsPos.z;
+
+    const broadLimit = playerHL + obsHL + 1.2;
+    if (dx * dx + dz * dz > broadLimit * broadLimit) return null;
+
+    const sinP = Math.sin(playerYaw), cosP = Math.cos(playerYaw);
+    const uPx = sinP, uPz = cosP;
+    const vPx = -cosP, vPz = sinP;
+
+    const sinO = Math.sin(obsYaw), cosO = Math.cos(obsYaw);
+    const uOx = sinO, uOz = cosO;
+    const vOx = -cosO, vOz = sinO;
+
+    testAxes[0].x = uPx; testAxes[0].z = uPz;
+    testAxes[1].x = vPx; testAxes[1].z = vPz;
+    testAxes[2].x = uOx; testAxes[2].z = uOz;
+    testAxes[3].x = vOx; testAxes[3].z = vOz;
+
+    let minOverlap = Infinity;
+    let minNormalX = 0, minNormalZ = 0;
+
+    for (let i = 0; i < 4; i++) {
+      const ax = testAxes[i].x;
+      const az = testAxes[i].z;
+      const dist = Math.abs(dx * ax + dz * az);
+      const rP = playerHL * Math.abs(uPx * ax + uPz * az) + playerHW * Math.abs(vPx * ax + vPz * az);
+      const rO = obsHL * Math.abs(uOx * ax + uOz * az) + obsHW * Math.abs(vOx * ax + vOz * az);
+      const overlap = (rP + rO) - dist;
+
+      if (overlap <= 0.001) {
+        return null; // Separated
+      }
+
+      if (overlap < minOverlap) {
+        minOverlap = overlap;
+        const sign = (dx * ax + dz * az) >= 0 ? 1 : -1;
+        minNormalX = ax * sign;
+        minNormalZ = az * sign;
+      }
+    }
+
+    return { overlap: minOverlap, nx: minNormalX, nz: minNormalZ };
+  }
+
+  // ==========================================
+  // 9. UNIFIED MASTER TICK (60 FPS OPTIMIZED)
+  // ==========================================
+  
+
+  let lastTime = performance.now();
+  let frameCount = 0;
+  let lastCrashTime = 0;
+
+  const masterLoop = () => {
+    const now = performance.now();
+    const dt = Math.min((now - lastTime) * 0.001, 0.08);
+    lastTime = now;
+    frameCount++;
+
+    flushQueuedPhysics();
+
+    // 1. Hyper UHD Real-Time Day & Night Simulation (continuous frame update)
+    updateSimulationLighting(dt);
+
+    // 2. Animate Road Traffic
+    roadCars.forEach(rc => {
+      if (rc.mesh.visible) {
+        rc.mesh.position.z += rc.dir * rc.speed * dt;
+        rc.mesh.position.x = rc.laneX;
+        rc.mesh.rotation.y = rc.yaw;
+
+        if (rc.dir > 0 && rc.mesh.position.z > rc.maxZ) rc.mesh.position.z = rc.minZ;
+        else if (rc.dir < 0 && rc.mesh.position.z < rc.minZ) rc.mesh.position.z = rc.maxZ;
+
+        if (rc.obstacle) {
+          rc.obstacle.center.x = rc.mesh.position.x;
+          rc.obstacle.center.z = rc.mesh.position.z;
+          rc.obstacle.yaw = rc.yaw;
+          if (rc.obstacle.rigidBody) {
+            rc.obstacle.rigidBody.setNextKinematicTranslation({
+              x: rc.mesh.position.x,
+              y: groundY + rc.obstacle.hh,
+              z: rc.mesh.position.z
+            });
+            rc.obstacle.rigidBody.setNextKinematicRotation({
+              x: 0,
+              y: Math.sin(rc.yaw / 2),
+              z: 0,
+              w: Math.cos(rc.yaw / 2)
+            });
+          }
+        }
+      }
+    });
+
+    const dm = window.__activeDriveMode || world?.carRig;
+    const playerCar = dm?.root || world?.car;
+    const chassis = window.__playerChassis;
+
+    if (playerCar && dm && dm.isActive && dm.isActive()) {
+      const pPos = { x: playerCar.position.x, z: playerCar.position.z };
+      const carY = playerCar.position.y;
+      const pYaw = playerCar.rotation.y || 0;
+      const pHW = 1.05;
+      const pHL = 2.45;
+
+      // Soft vertical safety cap: only clamp if an explosive impulse throws the car into the sky
+      if (chassis) {
+        const v = chassis.linvel();
+        if (v.y > 5.0) {
+          chassis.setLinvel({ x: v.x, y: 1.5, z: v.z }, true);
+        }
+      }
+
+    }
+
+        requestAnimationFrame(masterLoop);
   };
 
   requestAnimationFrame(masterLoop);
